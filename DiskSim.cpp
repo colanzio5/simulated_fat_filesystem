@@ -78,18 +78,17 @@ int main(int argc, char **argv)
 			break;
 
 		case '?':
-			if (verbose)
-				printf("\n%s is an invalid argument, exiting...\n", optarg);
+			if (verbose) printf("\n%s is an invalid argument, exiting...\n", optarg);
 
 		default:
 			break;
 		}
 	}
 
-	if (verbose)printf("arguments parsed...       \n");
-	if (verbose)printf("number of blocks used:  %i\n", number_blocks);
-	if (verbose)printf("disk file:              %s\n", disk_file);
-	if (verbose)printf("command file:           %s\n", cmd_file);
+	if (verbose) printf("arguments parsed...       \n");
+	if (verbose) printf("number of blocks used:  %i\n", number_blocks);
+	if (verbose) printf("disk file:              %s\n", disk_file);
+	if (verbose) printf("command file:           %s\n", cmd_file);
 
 	// warn the user if cmd are missing
 	// exit if any required params are missing
@@ -126,6 +125,47 @@ int main(int argc, char **argv)
 	// RUN THE SIMULATION
 	// ------------------
 	if (verbose) printf("\nstarting the siumulation...\n");
+
+	uint32_t block_size = device->getBlockSize();
+
+	BlockDevice::result result;
+
+	// allocate block buffer
+	char *block = new char[block_size];
+
+	const int fill_blocks = 5;
+	for (int blk_idx = 0; blk_idx < fill_blocks; blk_idx++)
+	{
+		// Fill buffer with data
+		char fill_char = 'a' + blk_idx;
+		for (int didx = 0; didx < block_size; didx++)
+			if (didx == 0)
+				block[didx] = '<';
+			else if (didx == block_size - 1)
+				block[didx] = '>';
+			else
+				block[didx] = fill_char;
+
+		result = device->writeBlock(blk_idx, block);
+		if(verbose) printf("writeBlock %d result %s\n", blk_idx, device->resultMessage(result));
+	}
+
+	/* Read blocks */
+	for (int blk_idx = 0; blk_idx < fill_blocks; blk_idx++)
+	{
+		result = device->readBlock(blk_idx, block);
+		if(verbose) printf("readBlock %d result %s\n", blk_idx, device->resultMessage(result));
+		if(verbose) hexDump(block, block_size);
+	}
+
+	/* Read block that has not yet been written  */
+	int blk = fill_blocks + 10;
+	result = device->readBlock(blk, block);
+
+	if(verbose) printf("readBlock %d result %s\n", blk, device->resultMessage(result));
+
+	if (result == BlockDevice::success)
+		if(verbose) hexDump(block, block_size);
 
 	return 0;
 }
