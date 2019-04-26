@@ -35,7 +35,7 @@ class BlockDevice
 	{
 		success,	  // operation completed successfully
 		nosuchblock,  // bad block index
-		badblock,	 // cannot access block
+		badblock,	  // cannot access block
 		badreadwrite, // unable to complete read or write
 		nosynch,	  // unable to synchronize buffers with blocks
 	} result;
@@ -85,8 +85,7 @@ class BlockDevice
    * otherwise we try to open the device.  (We don't use two different
    * constructors to ensure C compatibility.)
    */
-	BlockDevice(const char *filename, uint32_t blocks = 0,
-				uint32_t block_size = 4096);
+	BlockDevice(const char *filename, uint32_t blocks = 0, uint32_t block_size = 4096);
 
 	/* ~BlockDevice() - close the block device, writing any pending blocks */
 	~BlockDevice();

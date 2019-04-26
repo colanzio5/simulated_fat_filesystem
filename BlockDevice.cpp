@@ -34,7 +34,7 @@ BlockDevice::BlockDevice(const char *filename, uint32_t blocks, uint32_t block_s
 			throw std::runtime_error("File does not exist");
 
 		// open and read metadata
-		this->file_h = fopen(filename, "rwb");
+		this->file_h = fopen(filename, "rw+b");
 		if (this->file_h == NULL)
 			throw std::runtime_error("Unable to open file");
 
@@ -113,18 +113,16 @@ BlockDevice::result BlockDevice::seekBlock(uint32_t block, int offset = 0)
 		retseek = fseek(this->file_h, block_start + offset, SEEK_SET);
 		retval = (retseek == 0) ? BlockDevice::success : badblock;
 	}
-
 	return retval;
 }
 
 // ------------ public functions ---------------------------
 
 /* Complete any pending writes */
-BlockDevice::result BlockDevice::synchronize()
+BlockDevice::result BlockDevice::synchronize()	
 {
 
 	BlockDevice::result retval;
-
 	// flush write buffer (0 == success)
 	retval = (fflush(this->file_h) == 0) ? BlockDevice::success : BlockDevice::nosynch;
 	return retval;
@@ -147,7 +145,6 @@ BlockDevice::result BlockDevice::readBlock(uint32_t block, void *buffer)
 			// than the virtual device.  Seek to the last byte
 			// of the block which extends the file, then try again.
 			BlockDevice::result seekend = this->seekBlock(block, this->block_size - 1);
-
 			if (seekend == BlockDevice::success)
 			{
 				// Write a character to the last byte of block to extend the file
@@ -157,7 +154,6 @@ BlockDevice::result BlockDevice::readBlock(uint32_t block, void *buffer)
 				if (retval == BlockDevice::success)
 					retval = this->seekBlock(block);
 			}
-
 			if (retval == BlockDevice::success)
 			{
 				// read one block of block size bytes and verify write
@@ -166,7 +162,6 @@ BlockDevice::result BlockDevice::readBlock(uint32_t block, void *buffer)
 			}
 		}
 	}
-
 	return retval;
 }
 

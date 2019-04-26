@@ -7,13 +7,13 @@
 #include <iostream>
 
 #include "BlockDevice.h"
-#include "SuperBlock.h"
+#include "FileSystem.h"
 #include "hexdump.h"
 
 #define DEFAULT_DISK "foobar.dsk"
 #define DEFAULT_NUMBER_BLOCKS 1000
 
-void PrintHelp()
+void printHelp()
 {
 	std::cout << "-N | --number_blocks <n>:  Number of Blocks to Use\n"
 				 "-d | --disk_file <fname>:  Command File to Use\n"
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 
 		// show what each command can does
 		case 'h':
-			PrintHelp();
+			printHelp();
 			break;
 
 		case '?':
@@ -103,7 +103,6 @@ int main(int argc, char **argv)
 	// -------------------------------
 
 	if (verbose) printf("\ninstantiating the block device...\n");
-	uint32_t numblocks = DEFAULT_NUMBER_BLOCKS;
 	BlockDevice *device;
 
 	// See if the the disk exists
@@ -113,7 +112,7 @@ int main(int argc, char **argv)
 	if (stat(disk_file, &statbuf) == -1)
 	{
 		if (verbose) printf("creating new disk...\n");
-		device = new BlockDevice(disk_file, numblocks);
+		device = new BlockDevice(disk_file, number_blocks);
 	}
 	else
 	{
@@ -126,46 +125,29 @@ int main(int argc, char **argv)
 	// ------------------
 	if (verbose) printf("\nstarting the siumulation...\n");
 
-	uint32_t block_size = device->getBlockSize();
-
 	BlockDevice::result result;
-
+ 	uint32_t block_size = device->getBlockSize();
 	// allocate block buffer
 	char *block = new char[block_size];
 
-	const int fill_blocks = 5;
-	for (int blk_idx = 0; blk_idx < fill_blocks; blk_idx++)
-	{
-		// Fill buffer with data
-		char fill_char = 'a' + blk_idx;
-		for (int didx = 0; didx < block_size; didx++)
-			if (didx == 0)
-				block[didx] = '<';
-			else if (didx == block_size - 1)
-				block[didx] = '>';
-			else
-				block[didx] = fill_char;
+	// create a root entry
+	DirEntry* root_directory = (DirEntry *)malloc(sizeof(DirEntry));
+	root_directory->directory = true;
+	root_directory->start_blk = 0;
+	root_directory->size = sizeof("/");
+	strcpy(root_directory->fname, "/");
+	memcpy(&block, &root_directory, sizeof(root_directory));
 
-		result = device->writeBlock(blk_idx, block);
-		if(verbose) printf("writeBlock %d result %s\n", blk_idx, device->resultMessage(result));
-	}
+	// write root entry to block zero of device
+	result = device->writeBlock(0, block);
+	printf("writeBlock %d result %s\n", 0, device->resultMessage(result));
 
-	/* Read blocks */
-	for (int blk_idx = 0; blk_idx < fill_blocks; blk_idx++)
-	{
-		result = device->readBlock(blk_idx, block);
-		if(verbose) printf("readBlock %d result %s\n", blk_idx, device->resultMessage(result));
-		if(verbose) hexDump(block, block_size);
-	}
+	// read from block zero to verify that root dir was written
+	result = device->readBlock(0, block);
+	printf("readBlock %d result %s\n", 0, device->resultMessage(result));
+	hexDump(block, block_size);
 
-	/* Read block that has not yet been written  */
-	int blk = fill_blocks + 10;
-	result = device->readBlock(blk, block);
-
-	if(verbose) printf("readBlock %d result %s\n", blk, device->resultMessage(result));
-
-	if (result == BlockDevice::success)
-		if(verbose) hexDump(block, block_size);
-
+	// clean up and close
+	if (verbose) printf("done...\n\n");
 	return 0;
 }

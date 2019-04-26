@@ -1,17 +1,12 @@
-
-#ifndef SUPERBLOCK_H
-#define SUPERBLOCK_H
+#ifndef FILE_SYSTEM_H
+#define FILE_SYSTEM_H
 
 #include <stdint.h>
 
-/* block containing superblock
- * normally we would have a backup data structures
- * but will not so here
- */
+#define MAXFNAMELEN 256
 #define SUPERBLOCK_POSN 0
 #define FREEMAP_POSN 100
 #define FAT_POSN 200
-
 #define TINYFS "TinyFS"
 
 typedef struct
@@ -23,4 +18,12 @@ typedef struct
 	uint32_t fat_idx_root;
 } SuperBlock;
 
-#endif
+typedef struct
+{
+	uint32_t start_blk; // first block of file
+	uint32_t size;		// size of file in bytes
+	bool directory;		// true:directory, false:file
+	char fname[MAXFNAMELEN];
+} DirEntry;
+
+#endif //FILE_STSTEM_H
