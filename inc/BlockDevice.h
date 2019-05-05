@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "hexdump.h"
+
 /*
  * meta information for simulated device.
  * We store this at the beginning of the file
@@ -35,7 +37,7 @@ class BlockDevice
 	{
 		success,	  // operation completed successfully
 		nosuchblock,  // bad block index
-		badblock,	  // cannot access block
+		badblock,	 // cannot access block
 		badreadwrite, // unable to complete read or write
 		nosynch,	  // unable to synchronize buffers with blocks
 	} result;
@@ -102,6 +104,23 @@ class BlockDevice
    * Return:  result indicates success or problem type
    */
 	result writeBlock(uint32_t block, const void *buffer);
+
+	/*
+   * void dumpBlock(uint32_t block)
+   * Provide hexadecimal dump of block
+   */
+	inline void dumpBlock(uint32_t block)
+	{
+		// Read block into buffer
+		uint8_t buffer[this->block_size];
+		result retval = this->readBlock(block, buffer);
+		if (retval == success)
+		{
+			hexDump(buffer, this->block_size);
+		}
+		else
+			printf("Unable to dump block %d: %s\n", block, this->resultMessage(retval));
+	}
 
 	/* result synchronize() 
    * Flush any pending writes to disk.

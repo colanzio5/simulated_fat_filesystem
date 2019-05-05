@@ -4,15 +4,17 @@
 
 #include "BlockDevice.h"
 
+using namespace std;
+
 BlockDevice::BlockDevice(const char *filename, uint32_t blocks, uint32_t block_size)
 {
+
 	// If block_size is specified, ensure that it is divisible by 32 bits
 	// Real devices are usually a power of 2
 	if (block_size && (block_size % sizeof(int32_t) != 0))
-		throw std::runtime_error("Device block size must be a multiple of 4 bytes");
+		throw runtime_error("Device block size must be a multiple of 4 bytes");
 
- 	// header fields read/written
-	size_t count = 0;
+	size_t count = 0; // header fields read/written
 
 	// We really only need a a few bytes (sizeof(device_meta) for the device metadata
 	// However, it will make our life much simpler if we extend that too the standard
@@ -31,37 +33,33 @@ BlockDevice::BlockDevice(const char *filename, uint32_t blocks, uint32_t block_s
 		struct stat status;
 		bool exists = stat(filename, &status) != -1;
 		if (!exists)
-			throw std::runtime_error("File does not exist");
+			throw runtime_error("File does not exist");
 
 		// open and read metadata
-		this->file_h = fopen(filename, "rw+b");
+		this->file_h = fopen(filename, "r+");
 		if (this->file_h == NULL)
-			throw std::runtime_error("Unable to open file");
+			throw runtime_error("Unable to open file");
 
 		// Read in metadata and verify that we read the expected amount.
 		count += fread(&this->block_size, sizeof(uint32_t), 1, this->file_h);
 		count += fread(&this->blocks, sizeof(uint32_t), 1, this->file_h);
 		if (count != expected_hdr_count)
-			throw std::runtime_error("Unable to read device metadata");
+			throw runtime_error("Unable to read device metadata");
 	}
 	else
 	{
 		// New device
-		// open file
 		this->file_h = fopen(filename, "w+b");
 		if (this->file_h == NULL)
-			throw std::runtime_error("Unable to create new device");
+			throw runtime_error("Unable to create new device");
 
-		// init metadata
 		this->blocks = blocks;
 		this->block_size = block_size;
-		
 		// Write header
 		count += fwrite(&this->block_size, sizeof(uint32_t), 1, this->file_h);
 		count += fwrite(&this->blocks, sizeof(uint32_t), 1, this->file_h);
-		
 		if (count != expected_hdr_count)
-			throw std::runtime_error("Unable to initialize device metadata");
+			throw runtime_error("Unable to initialize device metadata");
 	}
 }
 
@@ -80,14 +78,19 @@ BlockDevice::~BlockDevice()
 }
 
 // ------------ private functions ---------------------------
+/* uint32_t lastBlock()
+   Returns index of last block implemented by file system
+   The number of blocks supported by the device may be higher
+*/
 uint32_t BlockDevice::lastBlock()
 {
 	/* seek to end and divide position by block size
-	 * after accounting for metadata at the beginning
-	 * of the file
-	 */
+   * after accounting for metadata at the beginning
+   * of the file
+   */
 	int position = fseek(this->file_h, 0, SEEK_END);
-	int32_t n = static_cast<int32_t>((position - this->offset) / this->block_size);
+	int32_t n = static_cast<int32_t>(
+		(position - this->offset) / this->block_size);
 	return n;
 }
 
@@ -101,28 +104,31 @@ uint32_t BlockDevice::lastBlock()
 BlockDevice::result BlockDevice::seekBlock(uint32_t block, int offset = 0)
 {
 	// check for valid block number
-	BlockDevice::result retval = (block < this->blocks) 
-		? BlockDevice::success : BlockDevice::nosuchblock;
+	BlockDevice::result retval =
+		(block < this->blocks) ? BlockDevice::success : BlockDevice::nosuchblock;
 
 	int retseek; // seek result
 	if (retval == BlockDevice::success)
 	{
 		/* valid block number */
+
 		// compute start byte and seek to it
 		long block_start = this->offset + block * this->block_size;
 		retseek = fseek(this->file_h, block_start + offset, SEEK_SET);
 		retval = (retseek == 0) ? BlockDevice::success : badblock;
 	}
+
 	return retval;
 }
 
 // ------------ public functions ---------------------------
 
 /* Complete any pending writes */
-BlockDevice::result BlockDevice::synchronize()	
+BlockDevice::result BlockDevice::synchronize()
 {
 
 	BlockDevice::result retval;
+
 	// flush write buffer (0 == success)
 	retval = (fflush(this->file_h) == 0) ? BlockDevice::success : BlockDevice::nosynch;
 	return retval;
@@ -132,13 +138,11 @@ BlockDevice::result BlockDevice::readBlock(uint32_t block, void *buffer)
 {
 	/* seek to block and read it */
 	BlockDevice::result retval = this->seekBlock(block);
-
 	if (retval == BlockDevice::success)
 	{
 		/* successful seek, try to read */
 		size_t read = fread(buffer, this->block_size, 1, this->file_h);
 		retval = (read == 1) ? BlockDevice::success : BlockDevice::badreadwrite;
-
 		if (retval == BlockDevice::badreadwrite)
 		{
 			// We might have failed because the file is shorter
@@ -162,6 +166,7 @@ BlockDevice::result BlockDevice::readBlock(uint32_t block, void *buffer)
 			}
 		}
 	}
+
 	return retval;
 }
 
@@ -175,7 +180,6 @@ BlockDevice::result BlockDevice::writeBlock(uint32_t block, const void *buffer)
 		size_t written = fwrite(buffer, this->block_size, 1, this->file_h);
 		retval = (written == 1) ? BlockDevice::success : BlockDevice::badreadwrite;
 	}
-
 	return retval;
 }
 

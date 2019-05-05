@@ -1,7 +1,3 @@
-# simulated_fat_filesystem
-
-## example low level operations with block device
-``` c++
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,6 +8,7 @@
 #include "SuperBlock.h"
 #include "hexdump.h"
  
+
 void test_blocks(BlockDevice *device) {
   uint32_t block_size = device->getBlockSize();
 
@@ -54,6 +51,7 @@ void test_blocks(BlockDevice *device) {
 
 }
 
+  
 int main(int argc, char **argv) {
 
   const char *disk;
@@ -81,6 +79,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-
-```
-  

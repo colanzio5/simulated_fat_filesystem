@@ -4,10 +4,9 @@
  * modified from Chris Brown's gist
  * https://gist.github.com/ccbrown/9722406
  */
-
 void hexDump(const void *data, size_t size)
 {
-
+	printf("\n-------- start hex dump --------\n");
 	/* Number of bytes per line, groupings and character representation */
 	const int charsperline = 16;
 	const int seperateat = 8;
@@ -16,9 +15,10 @@ void hexDump(const void *data, size_t size)
 	/* data buffer cast as unsigned character array */
 	unsigned char *buffer = (unsigned char *)data;
 
-	/* Determine how many hex nibbles to use for offset
-   * and create format string for offset into buffer 
-   */
+	/**
+	 * Determine how many hex nibbles to use for offset
+	 * and create format string for offset into buffer 
+	*/
 	int nibbles = 0;
 	const int bits_per_nibble = 4;
 	int tmpsize = size;
@@ -47,10 +47,11 @@ void hexDump(const void *data, size_t size)
 		/* dump hex value */
 		printf("%02X ", buffer[i]);
 
-		/* Populate ASCII buffer.
-     * use '.' if not a printable character
-     * buffer will be dumped at line end
-     */
+		/**
+		 *  Populate ASCII buffer.
+		 * use '.' if not a printable character
+		 * buffer will be dumped at line end
+		 */
 		if (buffer[i] >= ' ' && buffer[i] <= '~')
 		{
 			ascii[i % charsperline] = buffer[i];
@@ -87,4 +88,5 @@ void hexDump(const void *data, size_t size)
 			}
 		}
 	}
+	printf("\n-------- start hex dump --------\n");
 }
