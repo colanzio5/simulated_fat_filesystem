@@ -1,17 +1,22 @@
+CC=g++ # define the compiler to use
+TARGET=disksim # define the name of the executable
+SOURCES=src/DiskSim.C src/FileSystem.C src/IDevice.C inc/BlockDevice.C inc/hexdump.C
+CFLAGS=-O3 
+LFLAGS=
 
-CXX = g++  # C++ compiler
-CXXFLAGS = -g -c  # C++ flags
+# define list of objects
+OBJSC=$(SOURCES:.c=.o)
+OBJS=$(OBJSC:.C=.o)
 
-# Replace test_suite.C with your code
+# the target is obtained linking all .o files
+all: $(SOURCES) $(TARGET)
 
-disksim : BlockDevice.o DiskSim.o hexdump.o
-	$(CXX) -o disksim -g BlockDevice.o DiskSim.o hexdump.o 
+$(TARGET): $(OBJS)
+	$(CC) $(LFLAGS) $(OBJS) -o $(TARGET)
 
-BlockDevice.o : BlockDevice.cpp BlockDevice.h
+purge: clean
+	rm -f $(TARGET)
 
-hexdump.o : hexdump.cpp hexdump.h
+clean:
+	rm -f *.o
 
-disksim.o : DiskSim.cpp BlockDevice.h
-
-clean :
-	rm *.o

@@ -6,12 +6,9 @@
 #include <getopt.h>
 #include <iostream>
 
-#include "BlockDevice.h"
+#include "../inc/BlockDevice.h"
+#include "../inc/hexdump.h"
 #include "FileSystem.h"
-#include "hexdump.h"
-
-#define DEFAULT_DISK "foobar.dsk"
-#define DEFAULT_NUMBER_BLOCKS 1000
 
 void printHelp()
 {
@@ -33,7 +30,6 @@ int main(int argc, char **argv)
 	const char *disk_file = DEFAULT_DISK;
 	const char *cmd_file = nullptr;
 	bool verbose = false;
-
 	const char *const short_opts = "N:d:c:vh";
 	const option long_opts[] = {
 		{"number_blocks", required_argument, nullptr, 'N'},
@@ -51,7 +47,6 @@ int main(int argc, char **argv)
 
 		switch (opt)
 		{
-
 		// the number of blocks to use if creating a new disk device
 		case 'N':
 			number_blocks = std::stoi(optarg);
@@ -78,76 +73,64 @@ int main(int argc, char **argv)
 			break;
 
 		case '?':
-			if (verbose) printf("\n%s is an invalid argument, exiting...\n", optarg);
+			if (verbose)
+				printf("\n%s is an invalid argument, exiting...\n", optarg);
 
 		default:
 			break;
 		}
 	}
-
-	if (verbose) printf("arguments parsed...       \n");
-	if (verbose) printf("number of blocks used:  %i\n", number_blocks);
-	if (verbose) printf("disk file:              %s\n", disk_file);
-	if (verbose) printf("command file:           %s\n", cmd_file);
+	printf("arguments parsed...       \n");
+	printf("number of blocks used:  %i\n", number_blocks);
+	printf("disk file:              %s\n", disk_file);
+	printf("command file:           %s\n", cmd_file);
 
 	// warn the user if cmd are missing
 	// exit if any required params are missing
 	if (cmd_file == nullptr)
 	{
-		if (verbose) printf("\ncommand file is required, exiting...\n");
+		if (verbose)
+			printf("\ncommand file is required, exiting...\n");
 		exit(0);
 	}
 
 	// -------------------------------
 	// LOAD OR CREATE THE BLOCK DEVICE
 	// -------------------------------
-
-	if (verbose) printf("\ninstantiating the block device...\n");
+	if (verbose)
+		printf("\ninstantiating the block device...\n");
 	BlockDevice *device;
-
-	// See if the the disk exists
 	struct stat statbuf;
-
-	// couldn't stat, try to create  new disk
+	bool created = false;
+	// See if the the disk exists
 	if (stat(disk_file, &statbuf) == -1)
 	{
-		if (verbose) printf("creating new disk...\n");
+		// couldn't stat, try to create new disk
 		device = new BlockDevice(disk_file, number_blocks);
+		created = true;
+		if (verbose)
+			printf("creating new disk...\n");
 	}
 	else
 	{
-		if (verbose) printf("loading existing disk from file...\n");
+		// otherwise load the exisiting disk from the .dsk file
 		device = new BlockDevice(disk_file);
+		if (verbose)
+			printf("loading existing disk from file...\n");
 	}
 
 	// ------------------
 	// RUN THE SIMULATION
 	// ------------------
-	if (verbose) printf("\nstarting the siumulation...\n");
+	if (verbose)
+		printf("\nstarting the siumulation...\n");
+	FileSystem *fs = new FileSystem(device);
 
-	BlockDevice::result result;
- 	uint32_t block_size = device->getBlockSize();
-	// allocate block buffer
-	char *block = new char[block_size];
-
-	// create a root entry
-	DirEntry* root_directory = (DirEntry *)malloc(sizeof(DirEntry));
-	root_directory->directory = true;
-	root_directory->start_blk = 0;
-	root_directory->size = sizeof("/");
-	strcpy(root_directory->fname, "/");
-	memcpy(&block, &root_directory, sizeof(root_directory));
-
-	// write root entry to block zero of device
-	result = device->writeBlock(0, block);
-	printf("writeBlock %d result %s\n", 0, device->resultMessage(result));
-
-	// read from block zero to verify that root dir was written
-	result = device->readBlock(0, block);
-	printf("readBlock %d result %s\n", 0, device->resultMessage(result));
-	hexDump(block, block_size);
+	// parse the commands in the command file
+	// run each command and print out results
 
 	// clean up and close
-	if (verbose) printf("done...\n\n");
+	if (verbose)
+		printf("done...\n\n");
 	return 0;
 }
