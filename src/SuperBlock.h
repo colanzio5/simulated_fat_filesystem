@@ -21,8 +21,7 @@ typedef struct
   uint32_t free_block;        /* first block of freemap block */
   uint32_t fat_block;         /* first block of file allocation table */
   
-  /* Root directory: first block and directory size */
-  uint32_t root_dir_block;
+  uint32_t root_dir_block;    /* Root directory: first block and directory size */
   uint32_t root_dir_bytes;
 
 } SuperBlock;

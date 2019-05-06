@@ -14,8 +14,8 @@ class IDevice
 		uint32_t block_size;
 		uint32_t number_blocks;
 		IDevice(BlockDevice* device);
-		bool writeToDevice(uint32_t start_block, uint32_t offset, uint32_t buffer_size, char* buffer);
-		char* readFromDevice(uint32_t start_block, uint32_t offset, uint32_t buffer_size);
+		int writeToDevice(uint32_t start_block, uint32_t offset, uint32_t buffer_size, char* buffer);
+		int readFromDevice(uint32_t start_block, uint32_t offset, uint32_t buffer_size, char* buffer);
 		SuperBlock* checkForSuperBlock();
 		SuperBlock* createSuperBlock();
 };
